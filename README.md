@@ -1,0 +1,1 @@
+export VAULT_PASSWORD=my_vault_password

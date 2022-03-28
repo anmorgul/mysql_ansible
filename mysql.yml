@@ -1,0 +1,9 @@
+---
+- name: Install mysql
+  hosts: myubuntu
+  # connection: local
+  # remote_user: ubuntu
+  become: true
+  roles:
+  - mysql
+...
