@@ -1,0 +1,4 @@
+---
+- name: Uninstall mysql
+  ping:
+...

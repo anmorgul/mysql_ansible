@@ -1,0 +1,8 @@
+---
+- name: Uninstall mysql
+  include_tasks: "uninstall_mysql.yml"
+  tags: uninstall
+- name: Install mysql
+  import_tasks: "install_mysql.yml"
+  tags: install
+...
