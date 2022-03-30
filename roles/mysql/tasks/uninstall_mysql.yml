@@ -1,4 +1,51 @@
 ---
-- name: Uninstall mysql
-  ping:
+
+# - name: Make sure a service mysqld is stopped
+#   ansible.builtin.systemd:
+#     state: stopped
+#     name: mysql.service
+# # TODO if exist
+
+# - name: Disable a service mysqld
+#   ansible.builtin.systemd:
+#     enabled: no
+#     name: mysql.service
+
+- name: Remove packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent
+    purge: yes
+  loop:
+  - mysql-server
+  - mysql-common
+  - mysql-server-core-*
+  - mysql-client-core-*
+
+- name: Remove db and conf folders, and logfile
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+  - /var/lib/mysql/
+  - /etc/mysql/
+  - /var/log/mysql
+
+- name: Remove mysql's user and group
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    state: absent
+    remove: yes
+    groups: "{{ item.groups }}"
+  loop:
+    - { name: 'mysql', groups: 'mysql' }
+
+- name: Remove dependencies that are no longer required
+  apt:
+    autoremove: yes
+
+- name: Remove useless packages from the cache
+  apt:
+    autoclean: yes
+
 ...

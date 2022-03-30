@@ -14,12 +14,12 @@ freeze:
 
 install_mysql:
 	(	source venv/bin/activate; \
-		ansible-playbook mysql.yml --tags install; \
+		ansible-playbook mysql.yml --tags install -vvvv; \
 	)
 
 remove_mysql:
 	(	source venv/bin/activate; \
-		ansible-playbook mysql.yml --tags uninstall; \
+		ansible-playbook mysql.yml --tags uninstall -vv; \
 	)
 
 encrypt:
