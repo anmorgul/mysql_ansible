@@ -11,8 +11,13 @@
 #     enabled: no
 #     name: mysql.service
 
+- name: Remove htop
+  apt:
+    name: htop
+    state: absent
+
 - name: Remove packages
-  ansible.builtin.apt:
+  apt:
     name: "{{ item }}"
     state: absent
     purge: yes
