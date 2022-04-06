@@ -1,9 +1,9 @@
 ---
-- name: Install mysql
+- name: ping
   hosts: mysqlservers
   # connection: local
   # remote_user: ubuntu
   become: true
   roles:
-  - mysql
+  - ping
 ...

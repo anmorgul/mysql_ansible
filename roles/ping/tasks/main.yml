@@ -1,0 +1,6 @@
+---
+
+- name: Test ping
+  action: ping
+
+...

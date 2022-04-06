@@ -24,10 +24,17 @@ remove_mysql:
 
 encrypt:
 	(	source venv/bin/activate; \
-		ansible-vault encrypt ./host_vars/vault.yml; \
+		ansible-vault encrypt ./inventories/host_vars/myubuntu/vault.yml; \
+		# ansible-vault encrypt ./inventories/host_vars/mysqlserver/private_key; \
 	)
 
 decrypt:
 	(	source venv/bin/activate; \
-		ansible-vault decrypt ./host_vars/vault.yml; \
+		ansible-vault decrypt ./inventories/host_vars/myubuntu/vault.yml; \
+		# ansible-vault decrypt ./inventories/host_vars/mysqlserver/private_key; \
+	)
+
+ping:
+		(	source venv/bin/activate; \
+		ansible-playbook ping.yml -vvvv; \
 	)
