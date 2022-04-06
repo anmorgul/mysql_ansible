@@ -1,21 +1,5 @@
 ---
 
-# - name: Make sure a service mysqld is stopped
-#   ansible.builtin.systemd:
-#     state: stopped
-#     name: mysql.service
-# # TODO if exist
-
-# - name: Disable a service mysqld
-#   ansible.builtin.systemd:
-#     enabled: no
-#     name: mysql.service
-
-- name: Remove htop
-  apt:
-    name: htop
-    state: absent
-
 - name: Remove packages
   apt:
     name: "{{ item }}"
@@ -27,6 +11,11 @@
   - mysql-server-core-*
   - mysql-client-core-*
 
+- name: pymysql
+  pip:
+    name: pymysql
+    state: absent
+
 - name: Remove db and conf folders, and logfile
   file:
     path: "{{ item }}"
@@ -36,7 +25,7 @@
   - /etc/mysql/
   - /var/log/mysql
 
-- name: Remove mysql's user and group
+- name: Remove mysql user and group
   ansible.builtin.user:
     name: "{{ item.name }}"
     state: absent

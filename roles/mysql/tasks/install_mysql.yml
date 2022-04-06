@@ -2,34 +2,32 @@
 
 - name: Update apt-get repo and cache
   apt: 
-    update_cache=yes
-    force_apt_get=yes
-    cache_valid_time=3600
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
 
 - name: Upgrade all apt packages
   apt:
-    upgrade=dist
-    force_apt_get=yes
-
-- name: Install htop
-  apt:
-    name: htop
-    state: present
+    upgrade: dist
+    force_apt_get: yes
 
 - name: Install mysql-server
   apt:
-    name: mysql-server
-#     state: present
-#     # update_cache: no
+    force_apt_get: yes
+    name: mysql-server, python3-pip
 
-# - name: Enable a service mysql
-#   ansible.builtin.systemd:
-#     enabled: yes
-#     name: mysql.service
+- name: pymysql
+  pip:
+    name: pymysql
 
-# - name: Make sure a service mysql is started
-#   ansible.builtin.systemd:
-#     state: started
-#     name: mysql.service
+- name: Enable a service mysql
+  ansible.builtin.systemd:
+    enabled: yes
+    name: mysql.service
+
+- name: Make sure a service mysql is started
+  ansible.builtin.systemd:
+    state: started
+    name: mysql.service
 
 ...

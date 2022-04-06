@@ -1,0 +1,58 @@
+---
+
+- name: create random but idempotent password
+  set_fact:
+    root_password: "{{ lookup('password', '/dev/null encrypt=sha512_crypt length=18 chars=ascii_letters') }}"
+
+# /etc/mysqld.cnf
+# /home/ubuntu/pub/mysqld.cnf
+
+# - name: add skip-grant-tables
+#   lineinfile:
+#     dest: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+#     insertafter: '^\[mysqld\]'
+#     line: "skip-grant-tables"
+#   notify:
+#     - restart mysql server
+
+# - name: Flush handlers
+#   meta: flush_handlers
+
+# - name: Change file ownership, group
+#   ansible.builtin.file:
+#     path: "{{ 'secrets/' + inventory_hostname + '/root/mysqlpassword' }}"
+#     owner: root
+#     group: root
+
+# - name: flush privileges
+#   ansible.builtin.command: mysql -e "flush privileges;"
+
+# - name: root mysql_native_password
+#   ansible.builtin.command: mysql -uroot -p{{ root_password }} -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ root_password }}';"
+# #   ignore_errors: true
+
+# - name: remove skip-grant-tables
+#   ansible.builtin.lineinfile:
+#     path: "/etc/mysql/mysql.conf.d/mysqld.cnf"
+#     state: absent
+#     line: "skip-grant-tables"
+
+# - name: root auth_socket
+#   ansible.builtin.command: mysql -u root --password={{ root_password }} -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;"
+
+- name: create .my.cnf for root 
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: /root/.my_app.conf
+    # scr: templates/my.cnf.j2
+    # dest: /root/.my.cnf.test
+    # owner: root
+    # group: root
+    # mode: '600'
+#   notify:
+#     - restart mysql server
+
+# - name: Flush handlers
+#   meta: flush_handlers
+
+...
