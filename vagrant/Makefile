@@ -9,9 +9,9 @@ up:
 	vagrant up
 
 halt:
-	vagrant halt mysqlserver
+	vagrant halt mysqlserver mysqlserver2
 #jenkinsnode2
 
 destroy:
-	vagrant destroy mysqlserver
+	vagrant destroy mysqlserver mysqlserver2
 #jenkinsnode2

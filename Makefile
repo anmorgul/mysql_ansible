@@ -14,12 +14,22 @@ freeze:
 
 install_mysql:
 	(	source venv/bin/activate; \
-		ansible-playbook mysql.yml --tags install -vvvv; \
+		ansible-playbook mysql.yml --tags install; \
 	)
 
 remove_mysql:
 	(	source venv/bin/activate; \
-		ansible-playbook mysql.yml --tags uninstall -vv; \
+		ansible-playbook mysql.yml --tags uninstall; \
+	)
+
+secure:
+	(	source venv/bin/activate; \
+		ansible-playbook mysql.yml --tags secure; \
+	)
+
+users:
+	(	source venv/bin/activate; \
+		ansible-playbook mysql.yml --tags users; \
 	)
 
 encrypt:
@@ -35,6 +45,14 @@ decrypt:
 	)
 
 ping:
-		(	source venv/bin/activate; \
-		ansible-playbook ping.yml -vvvv; \
+	(	source venv/bin/activate; \
+		ansible-playbook ping.yml; \
 	)
+
+up_vagrant:
+	ssh xeon 'cd /home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/; make up'
+	scp xeon:/home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/.vagrant/machines/mysqlserver/virtualbox/private_key ./secrets/mysqlserver/private_key 
+	scp xeon:/home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/.vagrant/machines/mysqlserver2/virtualbox/private_key ./secrets/mysqlserver2/private_key 
+
+halt_vagrant:
+	ssh xeon 'cd /home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/; make halt'

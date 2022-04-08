@@ -1,13 +1,10 @@
 ---
-
-- name: create a random password for users
-  ansible.builtin.debug:
-    msg: "{{ lookup('password', 'secrets/' + inventory_hostname + '/' + item.name + '/mysqlpassword  encrypt=sha512_crypt length=18 chars=ascii_letters') }}"
-  loop: "{{ users }}"
-
-- name: create a mysql user with a password
-  ansible.builtin.command: 
-    mysql -uroot -e "CREATE USER '{{ item.name }}'@'{{ item.host }}' IDENTIFIED BY '{{ lookup("password", "secrets/" + inventory_hostname + "/" + item.name + "/mysqlpassword") }}' ;"
-  loop: "{{ users }}"
-
-...
+- name: Create users
+  community.mysql.mysql_user:
+    name: "{{ item.0.name }}"
+    host: "{{ item.1 }}"
+    priv: "{{ item.0.privs | join('/') }}"
+    password: "{{ lookup('password', 'secrets/' + inventory_hostname + '/' + item.0.name + '/mysqlpassword length=18 chars=ascii_letters') }}"
+  with_subelements:
+    - "{{ users }}"
+    - hosts

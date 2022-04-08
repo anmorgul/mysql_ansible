@@ -1,25 +1,28 @@
 ---
-
 - name: Uninstall mysql
   import_tasks: "uninstall_mysql.yml"
   tags:
-  - uninstall
+    - uninstall
 
 - name: Install mysql
   import_tasks: "install_mysql.yml"
   tags:
-  - install
+    - install
 
-- name: root config
-  import_tasks: "root.yml"
+- name: Mysql secure installation
+  import_tasks: "secure.yml"
   tags:
-  - install
-  - user
+    - install
+    - secure
 
-- name: create useusers
+- name: Create database
+  import_tasks: "create_db.yml"
+  tags:
+    - install
+    - database
+
+- name: Create users
   import_tasks: "create_users.yml"
   tags:
-  - install
-  - user
-
-...
+    - install
+    - users

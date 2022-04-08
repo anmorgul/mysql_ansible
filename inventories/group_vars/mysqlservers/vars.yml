@@ -1,0 +1,17 @@
+---
+users:
+  - name: joe
+    hosts:
+      - 0.0.0.0
+    privs:
+      - "{{ database1_name }}.*:SELECT"
+      - "{{ database1_name }}.*:INSERT"
+      - "{{ database2_name }}.*:SELECT"
+  - name: jim
+    hosts:
+      - 192.168.1.127
+      - 192.168.1.128
+      - 192.168.1.134
+    privs:
+      - "{{ database1_name }}.*:ALL"
+      - "{{ database2_name }}.*:ALL"

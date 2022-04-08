@@ -12,6 +12,12 @@ Vagrant.configure("2") do |config|
       :ip => ENV['MYSQLSERVER_IP'] || "192.168.1.70",
       :mem => ENV['MYSQLSERVER_MEMORY'] || "512",
       :cpu => ENV['MYSQLSERVER_CPU'] || "2"
+    },
+    {
+      :name => ENV['MYSQLSERVER2_NAME'] || "mysqlserver2",
+      :ip => ENV['MYSQLSERVER2_IP'] || "192.168.1.71",
+      :mem => ENV['MYSQLSERVER2_MEMORY'] || "512",
+      :cpu => ENV['MYSQLSERVER2_CPU'] || "2"
     }
   ]
 

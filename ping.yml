@@ -1,8 +1,6 @@
 ---
 - name: ping
   hosts: mysqlservers
-  # connection: local
-  # remote_user: ubuntu
   become: true
   roles:
   - ping

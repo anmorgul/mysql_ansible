@@ -1,8 +1,5 @@
 ---
-
 - name: restart mysql server
   ansible.builtin.systemd:
     state: restarted
     name: mysql.service
-
-...

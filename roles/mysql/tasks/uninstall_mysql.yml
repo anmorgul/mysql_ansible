@@ -1,15 +1,14 @@
 ---
-
 - name: Remove packages
   apt:
     name: "{{ item }}"
     state: absent
     purge: yes
   loop:
-  - mysql-server
-  - mysql-common
-  - mysql-server-core-*
-  - mysql-client-core-*
+    - mysql-server
+    - mysql-common
+    - mysql-server-core-*
+    - mysql-client-core-*
 
 - name: pymysql
   pip:
@@ -21,9 +20,9 @@
     path: "{{ item }}"
     state: absent
   loop:
-  - /var/lib/mysql/
-  - /etc/mysql/
-  - /var/log/mysql
+    - /var/lib/mysql/
+    - /etc/mysql/
+    - /var/log/mysql
 
 - name: Remove mysql user and group
   ansible.builtin.user:
@@ -32,7 +31,12 @@
     remove: yes
     groups: "{{ item.groups }}"
   loop:
-    - { name: 'mysql', groups: 'mysql' }
+    - { name: "mysql", groups: "mysql" }
+
+- name: Remove .my.cnf for root
+  ansible.builtin.file:
+    dest: /root/.my.cnf
+    state: absent
 
 - name: Remove dependencies that are no longer required
   apt:
@@ -41,5 +45,3 @@
 - name: Remove useless packages from the cache
   apt:
     autoclean: yes
-
-...

@@ -1,9 +1,9 @@
 ---
 - name: Install mysql
   hosts: mysqlservers
-  # connection: local
-  # remote_user: ubuntu
   become: true
+  vars:
+    database1_name: "mydatabase1"
+    database2_name: "mydatabase2"
   roles:
-  - mysql
-...
+    - mysql

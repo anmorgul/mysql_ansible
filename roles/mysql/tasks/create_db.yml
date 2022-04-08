@@ -1,0 +1,8 @@
+---
+- name: Create a new database
+  community.mysql.mysql_db:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ database1_name }}"
+    - "{{ database2_name }}"

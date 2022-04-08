@@ -1,0 +1,46 @@
+---
+- name: Check that the /root/.my.cnf exists
+  stat:
+    path: /root/.my.cnf
+  register: stat_result
+
+- name: create root password
+  set_fact:
+    root_password: "{{ lookup('password', '/dev/null length=18 chars=ascii_letters') }}"
+  when: not stat_result.stat.exists
+
+- name: Sets the root password
+  community.mysql.mysql_user:
+    user: root
+    password: "{{ root_password }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+    host: "{{ item }}"
+    priv: "*.*:ALL,GRANT"
+    check_implicit_admin: true
+  loop: "{{ mysql.hosts }}"
+  when: not stat_result.stat.exists
+  no_log: true
+  notify:
+    - restart mysql server
+
+- name: create .my.cnf for root
+  ansible.builtin.template:
+    src: my.cnf.j2
+    dest: /root/.my.cnf
+    owner: root
+    group: root
+    mode: "600"
+  when: not stat_result.stat.exists
+  notify:
+    - restart mysql server
+
+- name: Removes all anonymous user accounts
+  community.mysql.mysql_user:
+    name: ""
+    host_all: yes
+    state: absent
+
+- name: Removes the MySQL test database
+  community.mysql.mysql_db:
+    db: test
+    state: absent
