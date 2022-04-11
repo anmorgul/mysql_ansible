@@ -2,6 +2,7 @@
 - name: Install mysql
   hosts: mysqlservers
   become: true
+  gather_facts: True
   vars:
     database1_name: "mydatabase1"
     database2_name: "mydatabase2"

@@ -4,6 +4,12 @@
   tags:
     - uninstall
 
+- name: Add swap
+  import_tasks: "add_swap.yml"
+  tags:
+    - swap
+    - install
+
 - name: Install mysql
   import_tasks: "install_mysql.yml"
   tags:

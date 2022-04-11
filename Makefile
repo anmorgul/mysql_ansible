@@ -32,6 +32,11 @@ users:
 		ansible-playbook mysql.yml --tags users; \
 	)
 
+swap:
+	(	source venv/bin/activate; \
+		ansible-playbook mysql.yml --tags swap; \
+	)
+
 encrypt:
 	(	source venv/bin/activate; \
 		ansible-vault encrypt ./inventories/host_vars/myubuntu/vault.yml; \
