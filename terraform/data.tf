@@ -13,3 +13,7 @@ data "aws_ami" "ubuntu" {
 
   owners = ["099720109477"] # Canonical
 }
+
+data "template_file" "mymysql_public_key" {
+  template = file("${var.mymysql_public_key_path}")
+}
