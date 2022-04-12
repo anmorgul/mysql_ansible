@@ -66,6 +66,11 @@ halt_vagrant:
 ### terraform ###
 #################
 
+generate_ssh_keys:
+	(	source venv/bin/activate; \
+		ansible-playbook generate_ssh.yml; \
+	)
+
 terraform_init:
 	(	cd ./terraform; \
 		terraform init; \
