@@ -2,3 +2,8 @@ venv
 secrets
 .env
 .vagrant
+
+.terraform
+.terraform*
+terraform.tfvars
+terraform.tfstate*

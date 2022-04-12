@@ -61,3 +61,27 @@ up_vagrant:
 
 halt_vagrant:
 	ssh xeon 'cd /home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/; make halt'
+
+#################
+### terraform ###
+#################
+
+terraform_init:
+	(	cd ./terraform; \
+		terraform init; \
+	)
+
+terraform_plan:
+	(	cd ./terraform; \
+		terraform plan; \
+	)
+
+terraform_apply:
+	(	cd ./terraform; \
+		terraform apply; \
+	)
+
+terraform_destroy:
+	(	cd ./terraform; \
+		terraform destroy; \
+	)
