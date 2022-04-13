@@ -1,0 +1,12 @@
+---
+- name: Install mysql to aws ec2 instance
+  hosts: awsmysqlservers
+  become: true
+  gather_facts: False
+
+  vars:
+    database1_name: "mydatabase1"
+    database2_name: "mydatabase2"
+
+  roles:
+  - mysql

@@ -9,13 +9,13 @@
   tasks:
     - name: Create directory if not exist
       ansible.builtin.file:
-        path: "secrets/awsmymysql"
+        path: "secrets/awsmysqlserver"
         state: directory
         mode: "0755"
 
     - name: Generate SSH key "{{ssh_key_file}}"
       openssh_keypair:
-        path: "secrets/awsmymysql/{{ssh_key_file}}"
+        path: "secrets/awsmysqlserver/{{ssh_key_file}}"
         type: rsa
         size: 4096
         state: present

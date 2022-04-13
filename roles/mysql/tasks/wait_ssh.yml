@@ -1,0 +1,14 @@
+---
+- name: Wait for ssh enable
+  wait_for_connection:
+    delay: 20
+    timeout: 600
+    sleep: 5
+    connect_timeout: 10
+  tags:
+    - install
+
+- name: Gather facts for first time
+  setup:
+  tags:
+    - install

@@ -1,4 +1,9 @@
 ---
+- name: Wait for ssh
+  import_tasks: "wait_ssh.yml"
+  tags:
+    - install
+  
 - name: Uninstall mysql
   import_tasks: "uninstall_mysql.yml"
   tags:

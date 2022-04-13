@@ -62,13 +62,25 @@ up_vagrant:
 halt_vagrant:
 	ssh xeon 'cd /home/anmorgul/Documents/Projects/Softserve/mysql_vagrant/; make halt'
 
-#################
-### terraform ###
-#################
+###########
+### aws ###
+###########
+
+aws: generate_ssh_keys terraform_apply install_awsmysql
 
 generate_ssh_keys:
 	(	source venv/bin/activate; \
 		ansible-playbook generate_ssh.yml; \
+	)
+
+install_awsmysql:
+	(	source venv/bin/activate; \
+		ansible-playbook aws_mysql.yml --tags install; \
+	)
+
+uninstall_awsmysql:
+	(	source venv/bin/activate; \
+		ansible-playbook aws_mysql.yml --tags uninstall; \
 	)
 
 terraform_init:
@@ -84,6 +96,7 @@ terraform_plan:
 terraform_apply:
 	(	cd ./terraform; \
 		terraform apply; \
+		./change_ip.sh; \
 	)
 
 terraform_destroy:
