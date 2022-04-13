@@ -5,3 +5,5 @@ mysql:
     - 127.0.0.1
     - ::1
     - localhost
+  binds:
+    - 127.0.0.1

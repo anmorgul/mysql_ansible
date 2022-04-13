@@ -1,0 +1,21 @@
+---
+users:
+  - name: joe
+    hosts:
+      - 91.193.131.121
+    privs:
+      - "{{ database1_name }}.*:ALL"
+      - "{{ database2_name }}.*:SELECT"
+      - "{{ database2_name }}.*:INSERT"
+  - name: jim
+    hosts:
+      - "%"
+    privs:
+      - "{{ database1_name }}.*:ALL"
+      - "{{ database2_name }}.*:ALL"
+  - name: contabo
+    hosts:
+      - "{{ my_vps_ip }}" 
+    privs:
+      - "{{ database1_name }}.*:ALL"
+      - "{{ database2_name }}.*:ALL"

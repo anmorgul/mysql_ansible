@@ -7,6 +7,14 @@
   vars:
     database1_name: "mydatabase1"
     database2_name: "mydatabase2"
+    mysql:
+      hosts:
+        - "{{ ansible_hostname }}"
+        - 127.0.0.1
+        - ::1
+        - localhost
+      binds:
+        - 0.0.0.0
 
   roles:
-  - mysql
+    - mysql

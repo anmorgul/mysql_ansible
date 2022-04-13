@@ -44,3 +44,13 @@
   community.mysql.mysql_db:
     db: test
     state: absent
+
+- name: bind mysql remote address
+  ini_file:
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf 
+    section: mysqld
+    option: bind-address
+    value: "{{ item }}"
+  loop: "{{ mysql.binds }}"
+  notify:
+    - restart mysql server
