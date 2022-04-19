@@ -28,10 +28,10 @@ resource "aws_vpc" "petclinic" {
 # Subnet
 resource "aws_subnet" "mymysql" {
   vpc_id            = aws_vpc.petclinic.id
-  cidr_block        = var.subnet_cidr_block
+  cidr_block        = var.mymysql_subnet_cidr_block
   availability_zone = var.availability_zone
   tags = {
-    Name = "mymysql_subnet"
+    Name = "${var.app_name}_mymysql_subnet"
   }
 }
 
@@ -39,12 +39,12 @@ resource "aws_subnet" "mymysql" {
 resource "aws_route_table" "mymysql" {
   vpc_id = aws_vpc.petclinic.id
   tags = {
-    Name = "mymysql_route_table"
+    Name = "${var.app_name}_mymysql_route_table"
   }
 }
 
 # Internet gateway
-resource "aws_internet_gateway" "mymysql" {
+resource "aws_internet_gateway" "petclinic" {
   vpc_id = aws_vpc.petclinic.id
 }
 
@@ -67,7 +67,7 @@ resource "aws_security_group" "ssh_traffic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    "Name" = "allow_ssh_traffic"
+    "Name" = "${var.app_name}_allow_ssh_traffic"
   }
 }
 
@@ -90,7 +90,7 @@ resource "aws_security_group" "mysql_traffic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    "Name" = "allow_mysql_traffic"
+    "Name" = "${var.app_name}_allow_mysql_traffic"
   }
 }
 
@@ -104,7 +104,7 @@ resource "aws_route_table_association" "public" {
 resource "aws_route" "mymysql" {
   destination_cidr_block = "0.0.0.0/0"
   route_table_id         = aws_route_table.mymysql.id
-  gateway_id             = aws_internet_gateway.mymysql.id
+  gateway_id             = aws_internet_gateway.petclinic.id
 }
 
 # Network interface

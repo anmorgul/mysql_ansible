@@ -28,7 +28,7 @@ variable "vpc_cidr" {
   default = "10.10.0.0/16"
 }
 
-variable "subnet_cidr_block" {
+variable "mymysql_subnet_cidr_block" {
   type    = string
   default = "10.10.10.0/24"
 }
