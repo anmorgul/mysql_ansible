@@ -44,11 +44,11 @@ variable "mymysql_private_ips" {
 }
 
 variable "mymysql_public_key_path" {
-  type = string
+  type    = string
   default = "../secrets/awsmysqlserver/id_rsa_awsmymysql.pub"
 }
 
 variable "mymysql_public_key_name" {
-  type = string
+  type    = string
   default = "mymysql"
 }

@@ -13,7 +13,7 @@ resource "aws_ecs_cluster" "petclinic" {
 }
 
 resource "aws_ecs_task_definition" "petclinic" {
-  family = "petclinic_task"
+  family                = "petclinic_task"
   container_definitions = <<DEFINITION
   [
     {
@@ -42,7 +42,7 @@ resource "aws_ecs_task_definition" "petclinic" {
   task_role_arn            = aws_iam_role.ecsTaskExecutionRole.arn
 
   tags = {
-    Name        = "petclinic-ecs-td"
+    Name = "petclinic-ecs-td"
 
   }
 }
@@ -60,13 +60,13 @@ resource "aws_ecs_service" "aws_ecs_service" {
   desired_count        = 1
   force_new_deployment = true
 
-#   network_configuration {
-#     subnets          = aws_subnet.public.*.id
-#     #private
-#     assign_public_ip = true
-#     #false
-#     security_groups = [
-#       aws_security_group.service_security_group.id,
-#       aws_security_group.load_balancer_security_group.id
-#     ]
-  }
+  #   network_configuration {
+  #     subnets          = aws_subnet.public.*.id
+  #     #private
+  #     assign_public_ip = true
+  #     #false
+  #     security_groups = [
+  #       aws_security_group.service_security_group.id,
+  #       aws_security_group.load_balancer_security_group.id
+  #     ]
+}

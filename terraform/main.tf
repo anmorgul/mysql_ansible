@@ -11,7 +11,7 @@ data "template_file" "mymysql_public_key" {
 
 # Save Key pair
 resource "aws_key_pair" "mymysql" {
-  key_name   = "${var.mymysql_public_key_name}"
+  key_name   = var.mymysql_public_key_name
   public_key = data.template_file.mymysql_public_key.rendered
 }
 
@@ -50,8 +50,8 @@ resource "aws_internet_gateway" "mymysql" {
 
 # Security group for ssh
 resource "aws_security_group" "ssh_traffic" {
-  vpc_id = aws_vpc.mymysql.id
-  name   = "allow_ssh_traffic"
+  vpc_id      = aws_vpc.mymysql.id
+  name        = "allow_ssh_traffic"
   description = "Allow ssh traffic"
   ingress {
     description = "TLS from VPC"
@@ -73,8 +73,8 @@ resource "aws_security_group" "ssh_traffic" {
 
 # Security group for mysql
 resource "aws_security_group" "mysql_traffic" {
-  vpc_id = aws_vpc.mymysql.id
-  name   = "allow_mysql_traffic"
+  vpc_id      = aws_vpc.mymysql.id
+  name        = "allow_mysql_traffic"
   description = "Allow mysql traffic"
   ingress {
     description = "TLS from VPC"
@@ -121,7 +121,7 @@ resource "aws_network_interface" "mymysql" {
 resource "aws_eip" "mymysql" {
   # instance = aws_instance.mymysql.id
   network_interface = aws_network_interface.mymysql.id
-  vpc      = true
+  vpc               = true
 }
 
 # Most recent ubuntu
@@ -146,7 +146,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "mymysql" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
-  key_name   = "${var.mymysql_public_key_name}"
+  key_name      = var.mymysql_public_key_name
   #  vpc_security_group_ids = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_traffic.id]
   network_interface {
     network_interface_id = aws_network_interface.mymysql.id
