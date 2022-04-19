@@ -156,3 +156,103 @@ resource "aws_instance" "mymysql" {
     Name = "mymysql_instance"
   }
 }
+
+############
+resource "aws_ecr_repository" "petclinic" {
+  name                 = "${var.app_name}_ecr"
+  image_tag_mutability = "MUTABLE"
+  tags = {
+    Name = "${var.app_name}_ecr"
+  }
+}
+
+resource "aws_ecs_cluster" "petclinic" {
+  name = "petclinic_ecs_claster"
+  tags = {
+    Name = "petclinic_ecs_claster"
+  }
+}
+
+
+data "aws_iam_policy_document" "assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "ecs_task_execution" {
+  name               = "${var.app_name}_execution_task_role"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
+  tags = {
+    Name = "${var.app_name}_iam_role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+resource "aws_ecs_task_definition" "petclinic" {
+  family = "petclinic_task"
+  container_definitions = <<DEFINITION
+  [
+    {
+      "name": "${var.app_name}_container",
+      "image": "${aws_ecr_repository.petclinic.repository_url}:latest",
+      "entryPoint": [],
+
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80
+        }
+      ],
+      "cpu": 256,
+      "memory": 512
+    }
+  ]
+  DEFINITION
+
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution.arn
+
+  tags = {
+    Name = "petclinic_ecs_td"
+
+  }
+}
+
+data "aws_ecs_task_definition" "app_petclinic" {
+  task_definition = aws_ecs_task_definition.petclinic.family
+}
+
+resource "aws_ecs_service" "petclinic" {
+  name                 = "petclinic_ecs_service"
+  cluster              = aws_ecs_cluster.petclinic.id
+  task_definition      = "${aws_ecs_task_definition.petclinic.family}:${max(aws_ecs_task_definition.petclinic.revision, data.aws_ecs_task_definition.app_petclinic.revision)}"
+  launch_type          = "FARGATE"
+  scheduling_strategy  = "REPLICA"
+  desired_count        = 0
+  force_new_deployment = true
+  network_configuration {
+    assign_public_ip = true
+    security_groups = [
+      aws_security_group.ssh_traffic.id,
+    ]
+    subnets = [
+      aws_subnet.mymysql.id,
+    ]
+  }
+}

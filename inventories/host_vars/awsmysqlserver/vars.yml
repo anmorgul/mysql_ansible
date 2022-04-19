@@ -1,5 +1,5 @@
 ---
-ansible_host: "3.68.62.152"
+ansible_host: "3.72.120.172"
 ansible_user: ubuntu
 ansible_become: yes
 ansible_connection: ssh
