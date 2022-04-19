@@ -20,7 +20,7 @@ variable "instance_type" {
 
 variable "app_name" {
   type    = string
-  default = "My_app"
+  default = "petclinic"
 }
 
 variable "vpc_cidr" {

@@ -16,18 +16,18 @@ resource "aws_key_pair" "mymysql" {
 }
 
 # Virtual Private Cloud
-resource "aws_vpc" "mymysql" {
+resource "aws_vpc" "petclinic" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
   tags = {
-    Name = "${var.app_name}-vpc"
+    Name = "${var.app_name}_vpc"
   }
 }
 
 # Subnet
 resource "aws_subnet" "mymysql" {
-  vpc_id            = aws_vpc.mymysql.id
+  vpc_id            = aws_vpc.petclinic.id
   cidr_block        = var.subnet_cidr_block
   availability_zone = var.availability_zone
   tags = {
@@ -37,7 +37,7 @@ resource "aws_subnet" "mymysql" {
 
 # Route table
 resource "aws_route_table" "mymysql" {
-  vpc_id = aws_vpc.mymysql.id
+  vpc_id = aws_vpc.petclinic.id
   tags = {
     Name = "mymysql_route_table"
   }
@@ -45,12 +45,12 @@ resource "aws_route_table" "mymysql" {
 
 # Internet gateway
 resource "aws_internet_gateway" "mymysql" {
-  vpc_id = aws_vpc.mymysql.id
+  vpc_id = aws_vpc.petclinic.id
 }
 
 # Security group for ssh
 resource "aws_security_group" "ssh_traffic" {
-  vpc_id      = aws_vpc.mymysql.id
+  vpc_id      = aws_vpc.petclinic.id
   name        = "allow_ssh_traffic"
   description = "Allow ssh traffic"
   ingress {
@@ -73,7 +73,7 @@ resource "aws_security_group" "ssh_traffic" {
 
 # Security group for mysql
 resource "aws_security_group" "mysql_traffic" {
-  vpc_id      = aws_vpc.mymysql.id
+  vpc_id      = aws_vpc.petclinic.id
   name        = "allow_mysql_traffic"
   description = "Allow mysql traffic"
   ingress {

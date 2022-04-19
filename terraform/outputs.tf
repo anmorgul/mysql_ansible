@@ -1,5 +1,5 @@
 output "awc_vpc" {
-  value = aws_vpc.mymysql.id
+  value = aws_vpc.petclinic.id
 }
 
 output "mymysql_public_ip" {
