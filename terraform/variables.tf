@@ -54,21 +54,34 @@ variable "mymysql_public_key_name" {
 }
 
 variable "ingress_web" {
-  type = map
+  type = map(any)
   default = {
     "80" = {
-      port_from = 80,
-      port_to = 8080,
+      port_from   = 80,
+      port_to     = 8080,
       cidr_blocks = ["0.0.0.0/0"],
     }
     "8080" = {
-      port_from = 8080,
-      port_to = 8080,
+      port_from   = 8080,
+      port_to     = 8080,
       cidr_blocks = ["0.0.0.0/0"],
     }
   }
 }
 
 variable "task_envs" {
-  
+  default = [
+    {
+      "name": "MYSQL_USER",
+      "value": "petclinic"
+    },
+    {
+      "name": "MYSQL_PASSWORD",
+      "value": "petclinic"
+    },
+    {
+      "name": "MYSQL_URL",
+      "value": "jdbc:mysql://localhost/petclinic"
+    }
+  ]
 }

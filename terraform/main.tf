@@ -226,7 +226,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
-#       "environment": ${jsoncode(var.task_envs)},
+#      "environment": ${jsonencode(var.task_envs)},
 resource "aws_ecs_task_definition" "petclinic" {
   family                = "petclinic_task"
   container_definitions = <<DEFINITION
@@ -236,6 +236,10 @@ resource "aws_ecs_task_definition" "petclinic" {
       "image": "${aws_ecr_repository.petclinic.repository_url}:latest",
       "entryPoint": [],
       "essential": true,
+
+      "environment": ${jsonencode(
+       var.task_envs
+      )},
       "portMappings": [
         {
           "containerPort": 80,
