@@ -105,3 +105,11 @@ terraform_destroy:
 	(	cd ./terraform; \
 		terraform destroy; \
 	)
+
+#######
+# ECR #
+#######
+aws_ecr:
+	(	source venv/bin/activate; \
+		ansible-playbook ecs.yml  --tags ecr -vv; \
+	)

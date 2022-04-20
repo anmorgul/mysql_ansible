@@ -52,3 +52,19 @@ variable "mymysql_public_key_name" {
   type    = string
   default = "mymysql"
 }
+
+variable "ingress_web" {
+  type = map
+  default = {
+    "80" = {
+      port_from = 80,
+      port_to = 8080,
+      cidr_blocks = ["0.0.0.0/0"],
+    }
+    "8080" = {
+      port_from = 8080,
+      port_to = 8080,
+      cidr_blocks = ["0.0.0.0/0"],
+    }
+  }
+}

@@ -1,4 +1,5 @@
 ---
+ecr_account_id: "{{ secret_ecr_account_id }}"
 users:
   - name: joe
     hosts:

@@ -1,7 +1,7 @@
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  region     = var.aws_region
+  # access_key = var.aws_access_key
+  # secret_key = var.aws_secret_key
+  region = var.aws_region
 }
 
 # link to keys
@@ -25,36 +25,12 @@ resource "aws_vpc" "petclinic" {
   }
 }
 
-# Subnet
-resource "aws_subnet" "mymysql" {
-  vpc_id            = aws_vpc.petclinic.id
-  cidr_block        = var.mymysql_subnet_cidr_block
-  availability_zone = var.availability_zone
-  tags = {
-    Name = "${var.app_name}_mymysql_subnet"
-  }
-}
-
-# Route table
-resource "aws_route_table" "mymysql" {
-  vpc_id = aws_vpc.petclinic.id
-  tags = {
-    Name = "${var.app_name}_mymysql_route_table"
-  }
-}
-
-# Internet gateway
-resource "aws_internet_gateway" "petclinic" {
-  vpc_id = aws_vpc.petclinic.id
-}
-
 # Security group for ssh
 resource "aws_security_group" "ssh_traffic" {
   vpc_id      = aws_vpc.petclinic.id
   name        = "allow_ssh_traffic"
   description = "Allow ssh traffic"
   ingress {
-    description = "TLS from VPC"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -77,7 +53,6 @@ resource "aws_security_group" "mysql_traffic" {
   name        = "allow_mysql_traffic"
   description = "Allow mysql traffic"
   ingress {
-    description = "TLS from VPC"
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
@@ -91,6 +66,58 @@ resource "aws_security_group" "mysql_traffic" {
   }
   tags = {
     "Name" = "${var.app_name}_allow_mysql_traffic"
+  }
+}
+
+# Security group for web
+resource "aws_security_group" "web_traffic" {
+  vpc_id      = aws_vpc.petclinic.id
+  name        = "allow_web_traffic"
+  description = "Allow web traffic"
+  dynamic "ingress" {
+    for_each = var.ingress_web
+    content {
+      description = ingress.key
+      from_port   = ingress.value.port_from
+      to_port     = ingress.value.port_to
+      protocol    = "tcp"
+      cidr_blocks = ingress.value.cidr_blocks
+    }
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    "Name" = "${var.app_name}_allow_web_traffic"
+  }
+}
+
+# Subnet
+resource "aws_subnet" "mymysql" {
+  vpc_id            = aws_vpc.petclinic.id
+  cidr_block        = var.mymysql_subnet_cidr_block
+  availability_zone = var.availability_zone
+  tags = {
+    Name = "${var.app_name}_mymysql_subnet"
+  }
+}
+
+# Internet gateway
+resource "aws_internet_gateway" "petclinic" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_gw"
+  }
+}
+
+# Route table
+resource "aws_route_table" "mymysql" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_mymysql_route_table"
   }
 }
 
@@ -152,6 +179,7 @@ resource "aws_instance" "mymysql" {
     network_interface_id = aws_network_interface.mymysql.id
     device_index         = 0
   }
+  depends_on = [aws_internet_gateway.petclinic]
   tags = {
     Name = "mymysql_instance"
   }
@@ -159,7 +187,7 @@ resource "aws_instance" "mymysql" {
 
 ############
 resource "aws_ecr_repository" "petclinic" {
-  name                 = "${var.app_name}_ecr"
+  name                 = "${var.app_name}"
   image_tag_mutability = "MUTABLE"
   tags = {
     Name = "${var.app_name}_ecr"
@@ -199,7 +227,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
 }
 
 resource "aws_ecs_task_definition" "petclinic" {
-  family = "petclinic_task"
+  family                = "petclinic_task"
   container_definitions = <<DEFINITION
   [
     {
@@ -249,7 +277,7 @@ resource "aws_ecs_service" "petclinic" {
   network_configuration {
     assign_public_ip = true
     security_groups = [
-      aws_security_group.ssh_traffic.id,
+      aws_security_group.web_traffic.id,
     ]
     subnets = [
       aws_subnet.mymysql.id,

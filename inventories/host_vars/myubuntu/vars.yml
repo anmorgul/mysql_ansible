@@ -4,3 +4,4 @@ ansible_user: ubuntu
 ansible_become: yes
 ansible_become_password: "{{ become_pass }}"
 ansible_connection: local
+

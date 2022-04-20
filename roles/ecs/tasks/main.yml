@@ -1,0 +1,94 @@
+---
+# - name: Log into ECR if required.
+#   shell: "$(aws ecr get-login-password --region {{ ecr_region }})"
+#   tags:
+#     - skip_ansible_lint
+#     - ecr
+#   when: ecr_push or ecr_login_required
+
+- name: docker
+  shell: "aws ecr get-login-password --region {{ ecr_region }}  | docker login --username AWS --password-stdin {{ ecr_url }}/{{ ecr_image_name }}"
+  register: docker_login_command
+  tags:
+    - ecr
+
+# - name: Running mvn clean
+#   shell: "cd ../spring-petclinic && mvn clean install"
+#   register: mvn_result
+#   tags: 
+#     - ecr
+
+# - name: "mvn clean task output"
+#   debug:
+#     var: mvn_result
+#   tags: 
+#     - ecr
+
+- name: Build image.
+  docker_image:
+    build:
+      path: "{{ ecr_image_src_dir }}"
+      pull: true
+      args: "{{ ecr_image_buildargs | default(omit) }}"
+    name: "{{ ecr_image_name }}"
+    state: present
+    source: build
+  tags: 
+    - "{{ ecr_image_tags.0 }}"
+    - ecr
+
+- name: Ensure ECR repo exists.
+  ecs_ecr:
+    name: "{{ ecr_image_name }}"
+    region: "{{ ecr_region }}"
+    registry_id: "{{ ecr_account_id }}"
+    state: present
+  when: ecr_push
+  tags: 
+    - ecr
+
+- name: Set the current image tag.
+  set_fact:
+    image_tag: "{{ image_tag }}"
+  tags: 
+    - ecr
+
+- name: Print the current tag being pushed.
+  debug: var=image_tag
+  tags: 
+    - ecr
+
+- name: Ensure there's not already an image locally tagged with the ecr_url.
+  docker_image:
+    name: "{{ ecr_url }}/{{ ecr_image_name }}:{{ image_tag }}"
+    force_tag: true
+    state: absent
+  tags: 
+    - ecr
+
+- name: Apply additional tag if there's more than one.
+  command: "docker tag {{ ecr_image_name }}:{{ ecr_image_tags.0 }} {{ ecr_url }}/{{ ecr_image_name }}:{{ image_tag }}"
+  changed_when: true
+  tags: 
+    - ecr
+
+- name: Push image to ECR.
+  command: "docker push {{ ecr_url }}/{{ ecr_image_name }}"
+  register: push_result
+  changed_when: true
+  until: push_result is success
+  retries: 2
+  delay: 2
+  tags: 
+    - ecr
+
+- name: Update service
+  community.aws.ecs_service:
+    region: "{{ ecr_region }}"
+    state: present
+    name: petclinic_ecs_service
+    cluster: petclinic_ecs_claster
+    task_definition: 'petclinic_task'
+    desired_count: 1
+  tags: 
+    - ecr

@@ -1,0 +1,16 @@
+---
+- name: Petclinic
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    ecr_image_src_dir: ../spring-petclinic
+    ecr_image_name: petclinic
+    ecr_image_tags: ['latest']
+    pip_install_packages: ['docker']
+    ecr_region: eu-central-1
+    image_tag: 'latest'
+    ecr_account_id: 934086672967
+  roles:
+    - ecs
