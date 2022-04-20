@@ -68,3 +68,7 @@ variable "ingress_web" {
     }
   }
 }
+
+variable "task_envs" {
+  
+}

@@ -20,3 +20,8 @@ users:
     privs:
       - "{{ database1_name }}.*:ALL"
       - "{{ database2_name }}.*:ALL"
+  - name: petclinic
+    hosts:
+      - "%"
+    privs:
+      - "{{ database1_name }}.*:ALL"

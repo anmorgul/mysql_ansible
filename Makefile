@@ -68,7 +68,7 @@ halt_vagrant:
 ### aws ###
 ###########
 
-aws: generate_ssh_keys terraform_apply install_awsmysql
+aws: generate_ssh_keys terraform_apply install_awsmysql aws_ecr
 
 generate_ssh_keys:
 	(	source venv/bin/activate; \

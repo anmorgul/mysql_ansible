@@ -5,7 +5,7 @@
   gather_facts: False
 
   vars:
-    database1_name: "mydatabase1"
+    database1_name: "petclinic"
     database2_name: "mydatabase2"
     mysql:
       hosts:
