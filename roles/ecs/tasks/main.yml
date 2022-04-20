@@ -12,16 +12,31 @@
   tags:
     - ecr
 
-# - name: Running mvn clean
-#   shell: "cd ../spring-petclinic && mvn clean install"
-#   register: mvn_result
-#   tags: 
-#     - ecr
+- name: Running mvn clean
+  shell: "cd ../spring-petclinic && mvn -B -Dspring-boot.run.profiles=mysql -DskipTests clean package"
+  register: mvn_result
+  tags:
+    - ecr
 
 # - name: "mvn clean task output"
 #   debug:
 #     var: mvn_result
-#   tags: 
+#   tags:
+#     - ecr
+
+- name: Remove image
+  docker_image:
+    state: absent
+    name: "{{ ecr_image_name }}"
+  tags:
+    - ecr
+
+# - name: Prune images
+#   community.docker.docker_prune:
+#     images: yes
+#     images_filters:
+#       name: "{{ ecr_image_name }}"
+#   tags:
 #     - ecr
 
 - name: Build image.
@@ -33,7 +48,7 @@
     name: "{{ ecr_image_name }}"
     state: present
     source: build
-  tags: 
+  tags:
     - "{{ ecr_image_tags.0 }}"
     - ecr
 
@@ -44,18 +59,18 @@
     registry_id: "{{ ecr_account_id }}"
     state: present
   when: ecr_push
-  tags: 
+  tags:
     - ecr
 
 - name: Set the current image tag.
   set_fact:
     image_tag: "{{ image_tag }}"
-  tags: 
+  tags:
     - ecr
 
 - name: Print the current tag being pushed.
   debug: var=image_tag
-  tags: 
+  tags:
     - ecr
 
 - name: Ensure there's not already an image locally tagged with the ecr_url.
@@ -63,13 +78,13 @@
     name: "{{ ecr_url }}/{{ ecr_image_name }}:{{ image_tag }}"
     force_tag: true
     state: absent
-  tags: 
+  tags:
     - ecr
 
 - name: Apply additional tag if there's more than one.
   command: "docker tag {{ ecr_image_name }}:{{ ecr_image_tags.0 }} {{ ecr_url }}/{{ ecr_image_name }}:{{ image_tag }}"
   changed_when: true
-  tags: 
+  tags:
     - ecr
 
 - name: Push image to ECR.
@@ -79,7 +94,7 @@
   until: push_result is success
   retries: 2
   delay: 2
-  tags: 
+  tags:
     - ecr
 
 - name: Update service
@@ -88,7 +103,7 @@
     state: present
     name: petclinic_ecs_service
     cluster: petclinic_ecs_claster
-    task_definition: 'petclinic_task'
+    task_definition: "petclinic_task"
     desired_count: 1
-  tags: 
+  tags:
     - ecr
