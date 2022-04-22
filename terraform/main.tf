@@ -4,15 +4,24 @@ provider "aws" {
   region = var.aws_region
 }
 
-# link to keys
+# links to keys
 data "template_file" "mymysql_public_key" {
   template = file("${var.mymysql_public_key_path}")
 }
 
-# Save Key pair
+data "template_file" "bastion_public_key" {
+  template = file("${var.bastion_public_key_path}")
+}
+
+# Save Keys pairs
 resource "aws_key_pair" "mymysql" {
   key_name   = var.mymysql_public_key_name
   public_key = data.template_file.mymysql_public_key.rendered
+}
+
+resource "aws_key_pair" "bastion" {
+  key_name   = var.bastion_public_key_name
+  public_key = data.template_file.bastion_public_key.rendered
 }
 
 # Virtual Private Cloud
@@ -26,10 +35,10 @@ resource "aws_vpc" "petclinic" {
 }
 
 # Security group for ssh
-resource "aws_security_group" "ssh_traffic" {
+resource "aws_security_group" "ssh_access_public" {
   vpc_id      = aws_vpc.petclinic.id
-  name        = "allow_ssh_traffic"
-  description = "Allow ssh traffic"
+  name        = "allow_ssh_traffic_public"
+  description = "Allow ssh traffic public"
   ingress {
     from_port   = 22
     to_port     = 22
@@ -43,7 +52,7 @@ resource "aws_security_group" "ssh_traffic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = {
-    "Name" = "${var.app_name}_allow_ssh_traffic"
+    "Name" = "${var.app_name}_allow_ssh_traffic_public"
   }
 }
 
@@ -99,7 +108,7 @@ resource "aws_security_group" "web_traffic" {
 resource "aws_subnet" "mymysql" {
   vpc_id            = aws_vpc.petclinic.id
   cidr_block        = var.mymysql_subnet_cidr_block
-  availability_zone = var.availability_zone
+  availability_zone = var.availability_zone_a
   tags = {
     Name = "${var.app_name}_mymysql_subnet"
   }
@@ -138,7 +147,7 @@ resource "aws_route" "mymysql" {
 resource "aws_network_interface" "mymysql" {
   subnet_id       = aws_subnet.mymysql.id
   private_ips     = [var.mymysql_private_ips]
-  security_groups = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_traffic.id]
+  security_groups = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_public.id]
   tags = {
     Name = "mymysql_primary_network_interface"
   }
@@ -168,13 +177,25 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-# EC@ instance
+# bastion
+resource "aws_launch_configuration" "bastion" {
+  name            = "launch_configuration_for_bastion"
+  image_id        = data.aws_ami.ubuntu.id
+  instance_type   = var.instance_type
+  security_groups = [aws_security_group.ssh_access_public.id]
+  key_name        = var.bastion_public_key_name
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# EC2 instance for mysql
 
 resource "aws_instance" "mymysql" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
   key_name      = var.mymysql_public_key_name
-  #  vpc_security_group_ids = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_traffic.id]
+  #  vpc_security_group_ids = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_public.id]
   network_interface {
     network_interface_id = aws_network_interface.mymysql.id
     device_index         = 0
@@ -187,7 +208,7 @@ resource "aws_instance" "mymysql" {
 
 ############
 resource "aws_ecr_repository" "petclinic" {
-  name                 = "${var.app_name}"
+  name                 = var.app_name
   image_tag_mutability = "MUTABLE"
   tags = {
     Name = "${var.app_name}_ecr"
@@ -228,7 +249,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
 
 #      "environment": ${jsonencode(var.task_envs)},
 resource "aws_ecs_task_definition" "petclinic" {
-  family                = "petclinic_task"
+  family = "petclinic_task"
   container_definitions = <<DEFINITION
   [
     {
@@ -238,8 +259,8 @@ resource "aws_ecs_task_definition" "petclinic" {
       "essential": true,
 
       "environment": ${jsonencode(
-       var.task_envs
-      )},
+  var.task_envs
+)},
       "portMappings": [
         {
           "containerPort": 80,
@@ -252,17 +273,17 @@ resource "aws_ecs_task_definition" "petclinic" {
   ]
   DEFINITION
 
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  memory                   = "512"
-  cpu                      = "256"
-  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution.arn
+requires_compatibilities = ["FARGATE"]
+network_mode             = "awsvpc"
+memory                   = "512"
+cpu                      = "256"
+execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+task_role_arn            = aws_iam_role.ecs_task_execution.arn
 
-  tags = {
-    Name = "petclinic_ecs_td"
+tags = {
+  Name = "petclinic_ecs_td"
 
-  }
+}
 }
 
 data "aws_ecs_task_definition" "app_petclinic" {

@@ -4,20 +4,27 @@
   connection: local
 
   vars:
-    ssh_key_file: id_rsa_awsmymysql
+    ssh_key_file_mysql: id_rsa_awsmymysql
+    ssh_key_file_bastion: id_rsa_bastion
 
   tasks:
     - name: Create directory if not exist
       ansible.builtin.file:
-        path: "secrets/awsmysqlserver"
+        path: "{{ item }}"
         state: directory
         mode: "0755"
+      loop:
+        - "secrets/awsmysqlserver"
+        - "secrets/bastion"
 
-    - name: Generate SSH key "{{ssh_key_file}}"
+    - name: Generate SSH keys
       openssh_keypair:
-        path: "secrets/awsmysqlserver/{{ssh_key_file}}"
+        path: "{{ item }}"
         type: rsa
         size: 4096
         state: present
         force: no
         comment: awsmymysql
+      loop: 
+        - "secrets/awsmysqlserver/{{ssh_key_file_mysql}}"
+        - "secrets/bastion/{{ssh_key_file_bastion}}"

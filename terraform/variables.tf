@@ -33,9 +33,14 @@ variable "mymysql_subnet_cidr_block" {
   default = "10.10.10.0/24"
 }
 
-variable "availability_zone" {
+variable "availability_zone_a" {
   type    = string
   default = "eu-central-1a"
+}
+
+variable "availability_zone_b" {
+  type    = string
+  default = "eu-central-1b"
 }
 
 variable "mymysql_private_ips" {
@@ -49,6 +54,16 @@ variable "mymysql_public_key_path" {
 }
 
 variable "mymysql_public_key_name" {
+  type    = string
+  default = "mymysql"
+}
+
+variable "bastion_public_key_path" {
+  type    = string
+  default = "../secrets/bastion/id_rsa_bastion.pub"
+}
+
+variable "bastion_public_key_name" {
   type    = string
   default = "mymysql"
 }
@@ -70,18 +85,4 @@ variable "ingress_web" {
 }
 
 variable "task_envs" {
-  default = [
-    {
-      "name": "MYSQL_USER",
-      "value": "petclinic"
-    },
-    {
-      "name": "MYSQL_PASSWORD",
-      "value": "petclinic"
-    },
-    {
-      "name": "MYSQL_URL",
-      "value": "jdbc:mysql://localhost/petclinic"
-    }
-  ]
 }
