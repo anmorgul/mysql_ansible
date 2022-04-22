@@ -33,6 +33,16 @@ variable "mymysql_subnet_cidr_block" {
   default = "10.10.10.0/24"
 }
 
+variable "public_subnet_a_cidr_block" {
+  type    = string
+  default = "10.10.11.0/24"
+}
+
+variable "public_subnet_b_cidr_block" {
+  type    = string
+  default = "10.10.12.0/24"
+}
+
 variable "availability_zone_a" {
   type    = string
   default = "eu-central-1a"
@@ -65,7 +75,7 @@ variable "bastion_public_key_path" {
 
 variable "bastion_public_key_name" {
   type    = string
-  default = "mymysql"
+  default = "bastion"
 }
 
 variable "ingress_web" {

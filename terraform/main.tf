@@ -34,6 +34,25 @@ resource "aws_vpc" "petclinic" {
   }
 }
 
+# SG for ping
+resource "aws_security_group" "ping" {
+  vpc_id      = aws_vpc.petclinic.id
+  name        = "allow_ping"
+  description = "Allow ping"
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # Security group for ssh
 resource "aws_security_group" "ssh_access_public" {
   vpc_id      = aws_vpc.petclinic.id
@@ -56,6 +75,27 @@ resource "aws_security_group" "ssh_access_public" {
   }
 }
 
+# Security group for ssh
+resource "aws_security_group" "ssh_access_db" {
+  vpc_id      = aws_vpc.petclinic.id
+  name        = "allow_ssh_traffic_db"
+  description = "Allow ssh traffic db"
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.10.0.0/16"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    "Name" = "${var.app_name}_allow_ssh_traffic_db"
+  }
+}
 # Security group for mysql
 resource "aws_security_group" "mysql_traffic" {
   vpc_id      = aws_vpc.petclinic.id
@@ -114,6 +154,27 @@ resource "aws_subnet" "mymysql" {
   }
 }
 
+resource "aws_subnet" "public_a" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.public_subnet_a_cidr_block
+  availability_zone       = var.availability_zone_a
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_public_subnet_a"
+  }
+}
+
+resource "aws_subnet" "public_b" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.public_subnet_b_cidr_block
+  availability_zone       = var.availability_zone_b
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_public_subnet_b"
+  }
+}
+
+
 # Internet gateway
 resource "aws_internet_gateway" "petclinic" {
   vpc_id = aws_vpc.petclinic.id
@@ -123,7 +184,7 @@ resource "aws_internet_gateway" "petclinic" {
 }
 
 # Route table
-resource "aws_route_table" "mymysql" {
+resource "aws_route_table" "petclinic" {
   vpc_id = aws_vpc.petclinic.id
   tags = {
     Name = "${var.app_name}_mymysql_route_table"
@@ -131,15 +192,36 @@ resource "aws_route_table" "mymysql" {
 }
 
 # Route table association
-resource "aws_route_table_association" "public" {
+resource "aws_route_table_association" "public_a" {
+  subnet_id      = aws_subnet.public_a.id
+  route_table_id = aws_route_table.petclinic.id
+}
+
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
+  route_table_id = aws_route_table.petclinic.id
+}
+resource "aws_route_table_association" "mymysql" {
   subnet_id      = aws_subnet.mymysql.id
-  route_table_id = aws_route_table.mymysql.id
+  route_table_id = aws_route_table.petclinic.id
 }
 
 # Route
 resource "aws_route" "mymysql" {
   destination_cidr_block = "0.0.0.0/0"
-  route_table_id         = aws_route_table.mymysql.id
+  route_table_id         = aws_route_table.petclinic.id
+  gateway_id             = aws_internet_gateway.petclinic.id
+}
+
+resource "aws_route" "public_a" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.petclinic.id
+  gateway_id             = aws_internet_gateway.petclinic.id
+}
+
+resource "aws_route" "public_b" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.petclinic.id
   gateway_id             = aws_internet_gateway.petclinic.id
 }
 
@@ -147,7 +229,7 @@ resource "aws_route" "mymysql" {
 resource "aws_network_interface" "mymysql" {
   subnet_id       = aws_subnet.mymysql.id
   private_ips     = [var.mymysql_private_ips]
-  security_groups = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_public.id]
+  security_groups = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_db.id, aws_security_group.ping.id]
   tags = {
     Name = "mymysql_primary_network_interface"
   }
@@ -182,11 +264,23 @@ resource "aws_launch_configuration" "bastion" {
   name            = "launch_configuration_for_bastion"
   image_id        = data.aws_ami.ubuntu.id
   instance_type   = var.instance_type
-  security_groups = [aws_security_group.ssh_access_public.id]
+  security_groups = [aws_security_group.ssh_access_public.id, aws_security_group.ping.id]
   key_name        = var.bastion_public_key_name
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "aws_autoscaling_group" "bastion" {
+  vpc_zone_identifier = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  # availability_zones   = [var.availability_zone_a, var.availability_zone_b]
+  desired_capacity     = 1
+  max_size             = 1
+  min_size             = 1
+  launch_configuration = aws_launch_configuration.bastion.name
+  depends_on = [
+    aws_launch_configuration.bastion,
+  ]
 }
 
 # EC2 instance for mysql
@@ -302,6 +396,7 @@ resource "aws_ecs_service" "petclinic" {
     assign_public_ip = true
     security_groups = [
       aws_security_group.web_traffic.id,
+      aws_security_group.ping.id,
     ]
     subnets = [
       aws_subnet.mymysql.id,

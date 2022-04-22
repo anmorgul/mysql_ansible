@@ -1,0 +1,13 @@
+---
+- name: test bastion
+  hosts: awsmysqlserver
+  become: true
+  gather_facts: True
+  tasks:
+    - name: Get hostname
+      shell: echo $HOSTNAME
+      register: result
+
+    - name: Print the var
+      debug:
+        var: result
