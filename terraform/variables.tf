@@ -20,7 +20,7 @@ variable "instance_type" {
 
 variable "app_name" {
   type    = string
-  default = "petclinic"
+  default = "my_petclinic"
 }
 
 variable "vpc_cidr" {
@@ -28,7 +28,7 @@ variable "vpc_cidr" {
   default = "10.10.0.0/16"
 }
 
-variable "mymysql_subnet_cidr_block" {
+variable "db_subnet_cidr_block" {
   type    = string
   default = "10.10.10.0/24"
 }
@@ -53,19 +53,19 @@ variable "availability_zone_b" {
   default = "eu-central-1b"
 }
 
-variable "mymysql_private_ips" {
+variable "db_private_ips" {
   type    = string
   default = "10.10.10.100"
 }
 
-variable "mymysql_public_key_path" {
+variable "db_public_key_path" {
   type    = string
-  default = "../secrets/awsmysqlserver/id_rsa_awsmymysql.pub"
+  default = "../secrets/awsmysqlserver/id_rsa_db.pub"
 }
 
-variable "mymysql_public_key_name" {
+variable "db_public_key_name" {
   type    = string
-  default = "mymysql"
+  default = "db"
 }
 
 variable "bastion_public_key_path" {

@@ -6,7 +6,7 @@
 
   vars:
     ecr_image_src_dir: ../spring-petclinic
-    ecr_image_name: petclinic
+    ecr_image_name: my_petclinic
     ecr_image_tags: ['latest']
     pip_install_packages: ['docker']
     ecr_region: eu-central-1

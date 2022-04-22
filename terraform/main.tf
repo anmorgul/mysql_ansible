@@ -5,8 +5,8 @@ provider "aws" {
 }
 
 # links to keys
-data "template_file" "mymysql_public_key" {
-  template = file("${var.mymysql_public_key_path}")
+data "template_file" "db_public_key" {
+  template = file("${var.db_public_key_path}")
 }
 
 data "template_file" "bastion_public_key" {
@@ -14,9 +14,9 @@ data "template_file" "bastion_public_key" {
 }
 
 # Save Keys pairs
-resource "aws_key_pair" "mymysql" {
-  key_name   = var.mymysql_public_key_name
-  public_key = data.template_file.mymysql_public_key.rendered
+resource "aws_key_pair" "db" {
+  key_name   = var.db_public_key_name
+  public_key = data.template_file.db_public_key.rendered
 }
 
 resource "aws_key_pair" "bastion" {
@@ -53,7 +53,7 @@ resource "aws_security_group" "ping" {
   }
 }
 
-# Security group for ssh
+# Security group for ssh bastion
 resource "aws_security_group" "ssh_access_public" {
   vpc_id      = aws_vpc.petclinic.id
   name        = "allow_ssh_traffic_public"
@@ -75,7 +75,7 @@ resource "aws_security_group" "ssh_access_public" {
   }
 }
 
-# Security group for ssh
+# Security group for ssh db
 resource "aws_security_group" "ssh_access_db" {
   vpc_id      = aws_vpc.petclinic.id
   name        = "allow_ssh_traffic_db"
@@ -96,8 +96,8 @@ resource "aws_security_group" "ssh_access_db" {
     "Name" = "${var.app_name}_allow_ssh_traffic_db"
   }
 }
-# Security group for mysql
-resource "aws_security_group" "mysql_traffic" {
+# Security group for mysql traffic
+resource "aws_security_group" "db_traffic" {
   vpc_id      = aws_vpc.petclinic.id
   name        = "allow_mysql_traffic"
   description = "Allow mysql traffic"
@@ -118,7 +118,7 @@ resource "aws_security_group" "mysql_traffic" {
   }
 }
 
-# Security group for web
+# Security group for web traffic
 resource "aws_security_group" "web_traffic" {
   vpc_id      = aws_vpc.petclinic.id
   name        = "allow_web_traffic"
@@ -145,12 +145,12 @@ resource "aws_security_group" "web_traffic" {
 }
 
 # Subnet
-resource "aws_subnet" "mymysql" {
+resource "aws_subnet" "db" {
   vpc_id            = aws_vpc.petclinic.id
-  cidr_block        = var.mymysql_subnet_cidr_block
+  cidr_block        = var.db_subnet_cidr_block
   availability_zone = var.availability_zone_a
   tags = {
-    Name = "${var.app_name}_mymysql_subnet"
+    Name = "${var.app_name}_db_subnet"
   }
 }
 
@@ -183,11 +183,25 @@ resource "aws_internet_gateway" "petclinic" {
   }
 }
 
+resource "aws_nat_gateway" "db" {
+  allocation_id = aws_eip.db.id
+  subnet_id     = aws_subnet.public_a.id
+  # connectivity_type = "private"
+  # subnet_id         = aws_subnet.db.id
+}
+
 # Route table
 resource "aws_route_table" "petclinic" {
   vpc_id = aws_vpc.petclinic.id
   tags = {
-    Name = "${var.app_name}_mymysql_route_table"
+    Name = "${var.app_name}_route_table"
+  }
+}
+
+resource "aws_route_table" "privat" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_privat_route_table"
   }
 }
 
@@ -201,16 +215,17 @@ resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.petclinic.id
 }
-resource "aws_route_table_association" "mymysql" {
-  subnet_id      = aws_subnet.mymysql.id
-  route_table_id = aws_route_table.petclinic.id
+resource "aws_route_table_association" "db" {
+  subnet_id      = aws_subnet.db.id
+  route_table_id = aws_route_table.privat.id
 }
 
 # Route
-resource "aws_route" "mymysql" {
+resource "aws_route" "db" {
   destination_cidr_block = "0.0.0.0/0"
-  route_table_id         = aws_route_table.petclinic.id
-  gateway_id             = aws_internet_gateway.petclinic.id
+  route_table_id         = aws_route_table.privat.id
+  # gateway_id             = aws_internet_gateway.petclinic.id
+  gateway_id             = aws_nat_gateway.db.id
 }
 
 resource "aws_route" "public_a" {
@@ -225,20 +240,20 @@ resource "aws_route" "public_b" {
   gateway_id             = aws_internet_gateway.petclinic.id
 }
 
-# Network interface
-resource "aws_network_interface" "mymysql" {
-  subnet_id       = aws_subnet.mymysql.id
-  private_ips     = [var.mymysql_private_ips]
-  security_groups = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_db.id, aws_security_group.ping.id]
-  tags = {
-    Name = "mymysql_primary_network_interface"
-  }
-}
+# # Network interface
+# resource "aws_network_interface" "db" {
+#   subnet_id       = aws_subnet.db.id
+#   private_ips     = [var.db_private_ips]
+#   security_groups = [aws_security_group.db_traffic.id, aws_security_group.ssh_access_db.id, aws_security_group.ping.id]
+#   tags = {
+#     Name = "db_primary_network_interface"
+#   }
+# }
 
 # Elasic IP
-resource "aws_eip" "mymysql" {
-  # instance = aws_instance.mymysql.id
-  network_interface = aws_network_interface.mymysql.id
+resource "aws_eip" "db" {
+  # instance = aws_instance.db.id
+  # network_interface = aws_network_interface.db.id
   vpc               = true
 }
 
@@ -285,18 +300,20 @@ resource "aws_autoscaling_group" "bastion" {
 
 # EC2 instance for mysql
 
-resource "aws_instance" "mymysql" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = var.mymysql_public_key_name
-  #  vpc_security_group_ids = [aws_security_group.mysql_traffic.id, aws_security_group.ssh_access_public.id]
-  network_interface {
-    network_interface_id = aws_network_interface.mymysql.id
-    device_index         = 0
-  }
+resource "aws_instance" "db" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  private_ip             = var.db_private_ips
+  key_name               = var.db_public_key_name
+  vpc_security_group_ids = [aws_security_group.db_traffic.id, aws_security_group.ssh_access_db.id, aws_security_group.ping.id]
+  subnet_id              = aws_subnet.db.id
+  # network_interface {
+  #   network_interface_id = aws_network_interface.db.id
+  #   device_index         = 0
+  # }
   depends_on = [aws_internet_gateway.petclinic]
   tags = {
-    Name = "mymysql_instance"
+    Name = "db_instance"
   }
 }
 
@@ -352,32 +369,28 @@ resource "aws_ecs_task_definition" "petclinic" {
       "entryPoint": [],
       "essential": true,
 
-      "environment": ${jsonencode(
-  var.task_envs
-)},
+      "environment": ${jsonencode(var.task_envs)},
       "portMappings": [
         {
           "containerPort": 80,
           "hostPort": 80
         }
-      ],
-      "cpu": 256,
-      "memory": 512
+      ]
     }
   ]
   DEFINITION
 
-requires_compatibilities = ["FARGATE"]
-network_mode             = "awsvpc"
-memory                   = "512"
-cpu                      = "256"
-execution_role_arn       = aws_iam_role.ecs_task_execution.arn
-task_role_arn            = aws_iam_role.ecs_task_execution.arn
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution.arn
 
-tags = {
-  Name = "petclinic_ecs_td"
+  tags = {
+    Name = "petclinic_ecs_td"
 
-}
+  }
 }
 
 data "aws_ecs_task_definition" "app_petclinic" {
@@ -399,7 +412,9 @@ resource "aws_ecs_service" "petclinic" {
       aws_security_group.ping.id,
     ]
     subnets = [
-      aws_subnet.mymysql.id,
+      # aws_subnet.db.id,
+      aws_subnet.public_a.id,
+      aws_subnet.public_b.id,
     ]
   }
 }
