@@ -113,3 +113,11 @@ aws_ecr:
 	(	source venv/bin/activate; \
 		ansible-playbook ecs.yml  --tags ecr -vv; \
 	)
+
+################
+# test bastion #
+################
+test_bastion:
+	(	source venv/bin/activate; \
+		ansible-playbook test_bastion.yml -vvvv; \
+	)
