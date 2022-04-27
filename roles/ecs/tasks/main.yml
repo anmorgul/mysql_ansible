@@ -104,6 +104,6 @@
     name: petclinic_ecs_service
     cluster: petclinic_ecs_claster
     task_definition: "petclinic_task"
-    desired_count: 1
+    desired_count: 2
   tags:
     - ecr
