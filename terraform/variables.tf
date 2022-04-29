@@ -43,6 +43,26 @@ variable "public_subnet_b_cidr_block" {
   default = "10.10.12.0/24"
 }
 
+variable "petclinic_subnet_a_cidr_block" {
+  type    = string
+  default = "10.10.21.0/24"
+}
+
+variable "petclinic_subnet_b_cidr_block" {
+  type    = string
+  default = "10.10.22.0/24"
+}
+
+variable "bastion_subnet_a_cidr_block" {
+  type    = string
+  default = "10.10.31.0/24"
+}
+
+variable "bastion_subnet_b_cidr_block" {
+  type    = string
+  default = "10.10.32.0/24"
+}
+
 variable "availability_zone_a" {
   type    = string
   default = "eu-central-1a"
@@ -58,25 +78,36 @@ variable "db_private_ips" {
   default = "10.10.10.100"
 }
 
-variable "db_public_key_path" {
-  type    = string
-  default = "../secrets/awsmysqlserver/id_rsa_db.pub"
+
+variable "key_name" {
+  type = string
+  default = "ubuntu"
 }
 
-variable "db_public_key_name" {
+variable "key_path" {
   type    = string
-  default = "db"
+  default = "../secrets/ubuntu/id_rsa"
 }
 
-variable "bastion_public_key_path" {
-  type    = string
-  default = "../secrets/bastion/id_rsa_bastion.pub"
-}
+# variable "db_public_key_path" {
+#   type    = string
+#   default = "../secrets/awsmysqlserver/id_rsa_db.pub"
+# }
 
-variable "bastion_public_key_name" {
-  type    = string
-  default = "bastion"
-}
+# variable "db_public_key_name" {
+#   type    = string
+#   default = "db"
+# }
+
+# variable "bastion_public_key_path" {
+#   type    = string
+#   default = "../secrets/bastion/id_rsa_bastion.pub"
+# }
+
+# variable "bastion_public_key_name" {
+#   type    = string
+#   default = "bastion"
+# }
 
 variable "ingress_web" {
   type = map(any)

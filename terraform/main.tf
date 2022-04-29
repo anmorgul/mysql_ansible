@@ -4,25 +4,42 @@ provider "aws" {
   region = var.aws_region
 }
 
-# links to keys
-data "template_file" "db_public_key" {
-  template = file("${var.db_public_key_path}")
+resource "tls_private_key" "my_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
-data "template_file" "bastion_public_key" {
-  template = file("${var.bastion_public_key_path}")
+resource "aws_key_pair" "generated_key" {
+  key_name   = var.key_name
+  public_key = tls_private_key.my_key.public_key_openssh
 }
 
-# Save Keys pairs
-resource "aws_key_pair" "db" {
-  key_name   = var.db_public_key_name
-  public_key = data.template_file.db_public_key.rendered
+resource "local_file" "private_key" {
+  content         = tls_private_key.my_key.private_key_openssh
+  filename        = var.key_path
+  file_permission = "0600"
 }
 
-resource "aws_key_pair" "bastion" {
-  key_name   = var.bastion_public_key_name
-  public_key = data.template_file.bastion_public_key.rendered
-}
+
+# # links to keys
+# data "template_file" "db_public_key" {
+#   template = file("${var.db_public_key_path}")
+# }
+
+# data "template_file" "bastion_public_key" {
+#   template = file("${var.bastion_public_key_path}")
+# }
+
+# # Save Keys pairs
+# resource "aws_key_pair" "db" {
+#   key_name   = var.db_public_key_name
+#   public_key = data.template_file.db_public_key.rendered
+# }
+
+# resource "aws_key_pair" "bastion" {
+#   key_name   = var.bastion_public_key_name
+#   public_key = data.template_file.bastion_public_key.rendered
+# }
 
 # Virtual Private Cloud
 resource "aws_vpc" "petclinic" {
@@ -158,7 +175,7 @@ resource "aws_subnet" "public_a" {
   vpc_id                  = aws_vpc.petclinic.id
   cidr_block              = var.public_subnet_a_cidr_block
   availability_zone       = var.availability_zone_a
-  # map_public_ip_on_launch = true
+  map_public_ip_on_launch = true
   tags = {
     Name = "${var.app_name}_public_subnet_a"
   }
@@ -168,12 +185,51 @@ resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.petclinic.id
   cidr_block              = var.public_subnet_b_cidr_block
   availability_zone       = var.availability_zone_b
-  # map_public_ip_on_launch = true
+  map_public_ip_on_launch = true
   tags = {
     Name = "${var.app_name}_public_subnet_b"
   }
 }
 
+resource "aws_subnet" "petclinic_a" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.petclinic_subnet_a_cidr_block
+  availability_zone       = var.availability_zone_a
+  # map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_petclinic_subnet_a"
+  }
+}
+
+resource "aws_subnet" "petclinic_b" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.petclinic_subnet_b_cidr_block
+  availability_zone       = var.availability_zone_b
+  # map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_petclinic_subnet_b"
+  }
+}
+
+resource "aws_subnet" "bastion_a" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.bastion_subnet_a_cidr_block
+  availability_zone       = var.availability_zone_a
+  # map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_bastion_subnet_a"
+  }
+}
+
+resource "aws_subnet" "bastion_b" {
+  vpc_id                  = aws_vpc.petclinic.id
+  cidr_block              = var.bastion_subnet_b_cidr_block
+  availability_zone       = var.availability_zone_b
+  # map_public_ip_on_launch = true
+  tags = {
+    Name = "${var.app_name}_bastion_subnet_b"
+  }
+}
 
 # Internet gateway
 resource "aws_internet_gateway" "petclinic" {
@@ -183,61 +239,149 @@ resource "aws_internet_gateway" "petclinic" {
   }
 }
 
-resource "aws_nat_gateway" "db" {
-  allocation_id = aws_eip.db.id
+resource "aws_nat_gateway" "a" {
+  allocation_id = aws_eip.db_a.id
   subnet_id     = aws_subnet.public_a.id
   # connectivity_type = "private"
   # subnet_id         = aws_subnet.db.id
 }
 
+resource "aws_nat_gateway" "b" {
+  allocation_id = aws_eip.db_b.id
+  subnet_id     = aws_subnet.public_b.id
+  # connectivity_type = "private"
+  # subnet_id         = aws_subnet.db.id
+}
+
 # Route table
-resource "aws_route_table" "petclinic" {
+resource "aws_route_table" "petclinic_a" {
   vpc_id = aws_vpc.petclinic.id
   tags = {
-    Name = "${var.app_name}_route_table"
+    Name = "${var.app_name}_petclinic_a_route_table"
   }
 }
 
-resource "aws_route_table" "privat" {
+resource "aws_route_table" "petclinic_b" {
   vpc_id = aws_vpc.petclinic.id
   tags = {
-    Name = "${var.app_name}_privat_route_table"
+    Name = "${var.app_name}_petclinic_b_route_table"
+  }
+}
+
+resource "aws_route_table" "public_a" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_public_a_route_table"
+  }
+}
+
+resource "aws_route_table" "public_b" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_public_b_route_table"
+  }
+}
+
+
+resource "aws_route_table" "bastion_a" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_bastion_a_route_table"
+  }
+}
+
+resource "aws_route_table" "bastion_b" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_bastion_b_route_table"
+  }
+}
+
+resource "aws_route_table" "db" {
+  vpc_id = aws_vpc.petclinic.id
+  tags = {
+    Name = "${var.app_name}_db_route_table"
   }
 }
 
 # Route table association
 resource "aws_route_table_association" "public_a" {
   subnet_id      = aws_subnet.public_a.id
-  route_table_id = aws_route_table.petclinic.id
+  route_table_id = aws_route_table.public_a.id
 }
 
 resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
-  route_table_id = aws_route_table.petclinic.id
+  route_table_id = aws_route_table.public_b.id
 }
+
+resource "aws_route_table_association" "petclinic_a" {
+  subnet_id      = aws_subnet.petclinic_a.id
+  route_table_id = aws_route_table.petclinic_a.id
+}
+
+resource "aws_route_table_association" "petclinic_b" {
+  subnet_id      = aws_subnet.petclinic_b.id
+  route_table_id = aws_route_table.petclinic_b.id
+}
+
+resource "aws_route_table_association" "bastion_a" {
+  subnet_id      = aws_subnet.bastion_a.id
+  route_table_id = aws_route_table.bastion_a.id
+}
+
+resource "aws_route_table_association" "bastion_b" {
+  subnet_id      = aws_subnet.bastion_b.id
+  route_table_id = aws_route_table.bastion_b.id
+}
+
 resource "aws_route_table_association" "db" {
   subnet_id      = aws_subnet.db.id
-  route_table_id = aws_route_table.privat.id
+  route_table_id = aws_route_table.db.id
 }
 
 # Route
 resource "aws_route" "db" {
   destination_cidr_block = "0.0.0.0/0"
-  route_table_id         = aws_route_table.privat.id
+  route_table_id         = aws_route_table.db.id
   # gateway_id             = aws_internet_gateway.petclinic.id
-  gateway_id             = aws_nat_gateway.db.id
+  gateway_id             = aws_nat_gateway.a.id
 }
 
 resource "aws_route" "public_a" {
   destination_cidr_block = "0.0.0.0/0"
-  route_table_id         = aws_route_table.petclinic.id
+  route_table_id         = aws_route_table.public_a.id
   gateway_id             = aws_internet_gateway.petclinic.id
 }
 
 resource "aws_route" "public_b" {
   destination_cidr_block = "0.0.0.0/0"
-  route_table_id         = aws_route_table.petclinic.id
+  route_table_id         = aws_route_table.public_b.id
   gateway_id             = aws_internet_gateway.petclinic.id
+}
+
+resource "aws_route" "petclinic_a" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.petclinic_a.id
+  gateway_id             = aws_nat_gateway.a.id
+}
+
+resource "aws_route" "petclinic_b" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.petclinic_b.id
+  gateway_id             = aws_nat_gateway.b.id
+}
+
+resource "aws_route" "bastion_a" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.bastion_a.id
+  gateway_id             = aws_nat_gateway.a.id
+}
+
+resource "aws_route" "bastion_b" {
+  destination_cidr_block = "0.0.0.0/0"
+  route_table_id         = aws_route_table.bastion_b.id
+  gateway_id             = aws_nat_gateway.b.id
 }
 
 # # Network interface
@@ -251,7 +395,13 @@ resource "aws_route" "public_b" {
 # }
 
 # Elasic IP
-resource "aws_eip" "db" {
+resource "aws_eip" "db_a" {
+  # instance = aws_instance.db.id
+  # network_interface = aws_network_interface.db.id
+  vpc               = true
+}
+
+resource "aws_eip" "db_b" {
   # instance = aws_instance.db.id
   # network_interface = aws_network_interface.db.id
   vpc               = true
@@ -275,19 +425,102 @@ data "aws_ami" "ubuntu" {
 }
 
 # bastion
+
+# resource "aws_elb" "bastion" {
+#   name               = "bastion-elb"
+#   # availability_zones = [var.availability_zone_a, var.availability_zone_b]
+#   subnets = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+#   listener {
+#     instance_port     = 22
+#     instance_protocol = "tcp"
+#     lb_port           = 22
+#     lb_protocol       = "tcp"
+#   }
+
+#   # instances                   = [aws_instance.foo.id]
+#   cross_zone_load_balancing   = true
+#   idle_timeout                = 400
+#   connection_draining         = true
+#   connection_draining_timeout = 400
+
+#   tags = {
+#     Name = "bastionn-elb"
+#   }
+# }
+resource "aws_lb" "nlb" {
+  name = "nlb"
+  internal = false
+  load_balancer_type = "network"
+  subnets = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  enable_deletion_protection = false
+  # cross_zone_load_balancing   = true
+  enable_cross_zone_load_balancing = true
+  # security_groups = [
+  #   aws_security_group.ssh_access_public.id,
+  #   aws_security_group.ping.id
+  # ]
+  tags = {
+    Name = "network_lb"
+  }
+}
+
+resource "aws_lb_target_group" "nlb2_port22" {
+  name = "nlb22-tg"
+  port = 22
+  protocol = "TCP"
+  vpc_id = aws_vpc.petclinic.id
+  health_check {
+    port     = 22
+    protocol = "TCP"
+  }
+}
+
+resource "aws_lb_target_group" "nlb2_port80" {
+  name = "nlb80-tg"
+  port = 8080
+  protocol = "TCP"
+  target_type = "ip"
+  vpc_id = aws_vpc.petclinic.id
+  health_check {
+    port     = 8080
+    protocol = "TCP"
+  }
+}
+
+resource "aws_lb_listener" "nlb_port22" {
+  load_balancer_arn = aws_lb.nlb.arn
+  port = "22"
+  protocol = "TCP"
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.nlb2_port22.arn
+  }
+}
+
+resource "aws_lb_listener" "nlb_port80" {
+  load_balancer_arn = aws_lb.nlb.arn
+  port = "8080"
+  protocol = "TCP"
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.nlb2_port80.arn
+  }
+}
+
+
 resource "aws_launch_configuration" "bastion" {
   name            = "launch_configuration_for_bastion"
   image_id        = data.aws_ami.ubuntu.id
   instance_type   = var.instance_type
   security_groups = [aws_security_group.ssh_access_public.id, aws_security_group.ping.id]
-  key_name        = var.bastion_public_key_name
+  key_name        = var.key_name
   lifecycle {
     create_before_destroy = true
   }
 }
 
 resource "aws_autoscaling_group" "bastion" {
-  vpc_zone_identifier = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  vpc_zone_identifier = [aws_subnet.bastion_a.id, aws_subnet.bastion_b.id]
   # availability_zones   = [var.availability_zone_a, var.availability_zone_b]
   desired_capacity     = 1
   max_size             = 1
@@ -298,13 +531,19 @@ resource "aws_autoscaling_group" "bastion" {
   ]
 }
 
+resource "aws_autoscaling_attachment" "asg_attachment_bastion" {
+  autoscaling_group_name = aws_autoscaling_group.bastion.id
+  # elb                    = aws_elb.bastion.id
+  lb_target_group_arn    = aws_lb_target_group.nlb2_port22.arn
+}
+
 # EC2 instance for mysql
 
 resource "aws_instance" "db" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   private_ip             = var.db_private_ips
-  key_name               = var.db_public_key_name
+  key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.db_traffic.id, aws_security_group.ssh_access_db.id, aws_security_group.ping.id]
   subnet_id              = aws_subnet.db.id
   # network_interface {
@@ -372,8 +611,8 @@ resource "aws_ecs_task_definition" "petclinic" {
       "environment": ${jsonencode(var.task_envs)},
       "portMappings": [
         {
-          "containerPort": 80,
-          "hostPort": 80
+          "containerPort": 8080,
+          "hostPort": 8080
         }
       ]
     }
@@ -403,18 +642,23 @@ resource "aws_ecs_service" "petclinic" {
   task_definition      = "${aws_ecs_task_definition.petclinic.family}:${max(aws_ecs_task_definition.petclinic.revision, data.aws_ecs_task_definition.app_petclinic.revision)}"
   launch_type          = "FARGATE"
   scheduling_strategy  = "REPLICA"
-  desired_count        = 0
+  desired_count        = 2
   force_new_deployment = true
+  load_balancer {
+    target_group_arn = aws_lb_target_group.nlb2_port80.arn
+    container_name = "${var.app_name}_container"
+    container_port = "8080"
+  }
   network_configuration {
-    assign_public_ip = true
+    assign_public_ip = false
     security_groups = [
       aws_security_group.web_traffic.id,
       aws_security_group.ping.id,
     ]
     subnets = [
       # aws_subnet.db.id,
-      aws_subnet.public_a.id,
-      aws_subnet.public_b.id,
+      aws_subnet.petclinic_a.id,
+      aws_subnet.petclinic_b.id,
     ]
   }
 }

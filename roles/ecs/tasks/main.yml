@@ -97,13 +97,46 @@
   tags:
     - ecr
 
-- name: Update service
-  community.aws.ecs_service:
-    region: "{{ ecr_region }}"
-    state: present
-    name: petclinic_ecs_service
-    cluster: petclinic_ecs_claster
-    task_definition: "petclinic_task"
-    desired_count: 2
+- name: get ecs service details
+  ecs_service_facts:
+    cluster: "petclinic_ecs_claster"
+    service: "petclinic_ecs_service"
+    details: true
+  register: ecs_service_facts_output
   tags:
     - ecr
+
+- set_fact:
+    loadbalancers: "{{ ecs_service_facts_output.services[0].loadBalancers }}"
+  when: ecs_service_facts_output.services | count
+  tags:
+    - ecr
+
+- name: create or update ecs service using target group
+  ecs_service:
+    state: present
+    name: "petclinic_ecs_service"
+    cluster: "petclinic_ecs_claster"
+    task_definition: "petclinic_task"
+    load_balancers: "{{ loadbalancers }}"
+    desired_count: "{{ app_desired_count | default( 3 ) }}"
+    deployment_configuration:
+      minimum_healthy_percent: "{{ app_minimum_healthy | default( 100 ) }}"
+      maximum_percent: "{{ app_maximum_percent | default( 200 )}}"
+  tags:
+    - ecr
+
+# - name: Update service
+#   community.aws.ecs_service:
+#     region: "{{ ecr_region }}"
+#     state: present
+#     name: petclinic_ecs_service
+#     cluster: petclinic_ecs_claster
+#     task_definition: "petclinic_task"
+#     desired_count: 3
+#     # load_balancers:
+#     #   - target_group_arn: "aws_lb_target_group.nlb2_port80.arn"
+#     #     container_name: ""
+#     #     container_port: "80"
+#   tags:
+#     - ecr

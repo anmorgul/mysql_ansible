@@ -4,8 +4,8 @@ ansible_user: ubuntu
 ansible_become: yes
 ansible_connection: ssh
 # ProxyJump: bastion
-ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q ubuntu@{{ bastion_ip }} -i ./secrets/bastion/id_rsa_bastion"'
+ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q ubuntu@{{ bastion_ip }} -i ./secrets/ubuntu/id_rsa"'
 # ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q ubuntu:{{ bastion_ip }} -i ./secrets/bastion/id_rsa_bastion"'
 # ansible_ssh_common_args: '-o ProxyCommand="ssh -p 22 -J ubuntu@3.121.99.204 -i ./secrets/bastion/id_rsa_bastion"'
 ansible_port: 22
-ansible_private_key_file: ./secrets/awsmysqlserver/id_rsa_db
+ansible_private_key_file: ./secrets/ubuntu/id_rsa
